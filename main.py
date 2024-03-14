@@ -55,7 +55,7 @@ def getDocType(title: str):
     for doc_type in doc_types:
         if doc_type in normalized_title:
             position_find = normalized_title.find(doc_type)
-            if position_find == 0:
+            if position_find == 0 or position_find == 1:
                 return doc_type
 
     return None
