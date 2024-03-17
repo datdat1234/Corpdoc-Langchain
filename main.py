@@ -55,7 +55,7 @@ def getDocType(title: str):
     for doc_type in doc_types:
         if doc_type in normalized_title:
             position_find = normalized_title.find(doc_type)
-            if position_find == 0:
+            if position_find == 0 or position_find == 1:
                 return doc_type
 
     return None
@@ -106,9 +106,7 @@ def index(title: str, type: str):
     loader = PyPDFLoader(criteria_path)
     docs = loader.load_and_split()
     embeddings = OpenAIEmbeddings()
-    text_splitter = RecursiveCharacterTextSplitter()
-    documents = text_splitter.split_documents(docs)
-    vector = FAISS.from_documents(documents, embeddings)
+    vector = FAISS.from_documents(docs, embeddings)
 
     # Create LLM
     llm = ChatOpenAI()
