@@ -106,9 +106,7 @@ def index(title: str, type: str):
     loader = PyPDFLoader(criteria_path)
     docs = loader.load_and_split()
     embeddings = OpenAIEmbeddings()
-    text_splitter = RecursiveCharacterTextSplitter()
-    documents = text_splitter.split_documents(docs)
-    vector = FAISS.from_documents(documents, embeddings)
+    vector = FAISS.from_documents(docs, embeddings)
 
     # Create LLM
     llm = ChatOpenAI()
