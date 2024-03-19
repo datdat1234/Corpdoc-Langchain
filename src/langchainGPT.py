@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+########################## LIBRARY ###############################
+
+from rabbitMQ import producer_channel
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -6,17 +8,20 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from dotenv import load_dotenv
 from unidecode import unidecode
+import json
+import pika
 import os
 
-# Load variables from .env file
-load_dotenv()
+##################################################################
 
-os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY")
+########################## VARIABLE ##############################
 
-app = FastAPI()
+from envLoader import openai_api_key, amqp_mongo_queue
+
+##################################################################
+
+os.environ["OPENAI_API_KEY"] = openai_api_key
 
 
 def getDocType(title: str):
@@ -61,8 +66,16 @@ def getDocType(title: str):
     return None
 
 
-@app.get("/")
-def index(title: str, type: str):
+def langchainProcessor(req):
+    # Initialize the producer channel
+    producer_channel.queue_declare(queue=amqp_mongo_queue, durable=True)
+    producer_channel.basic_qos(prefetch_count=10)
+
+    # Convert the request to JSON
+    json_data = json.loads(req)
+    type = json_data["data"]["type"]
+    title = json_data["data"]["title"]
+
     # Handle the type of document and load the corresponding criteria
     criteria_path = ""
     if type == "admin-doc":
@@ -70,7 +83,17 @@ def index(title: str, type: str):
 
         # If the document type is not found, return "Khác"
         if doc_type == None:
-            return {"data": "Khác"}
+            json_data["data"]["criteria"] = "Khác"
+            data_string = json.dumps(json_data)
+            producer_channel.basic_publish(
+                exchange="",
+                routing_key=amqp_mongo_queue,
+                body=data_string,
+                properties=pika.BasicProperties(
+                    delivery_mode=pika.DeliveryMode.Persistent
+                ),
+            )
+            return
 
         criteria_path = "criteria/VBHC/" + doc_type + ".pdf"
         docs_prompt = """
@@ -120,4 +143,13 @@ def index(title: str, type: str):
 
     # Return the answer
     res = response["answer"].split("|")
-    return {"data": res}
+    json_data["data"]["criteria"] = res
+    data_string = json.dumps(json_data)
+    print(data_string)
+    # Send message to Mongo queue
+    producer_channel.basic_publish(
+        exchange="",
+        routing_key=amqp_mongo_queue,
+        body=data_string,
+        properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),
+    )
