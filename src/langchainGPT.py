@@ -1,6 +1,6 @@
 ########################## LIBRARY ###############################
 
-from rabbitMQ import producer_channel
+from rabbitMQ import params
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -8,10 +8,15 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
-from unidecode import unidecode
 import json
 import pika
 import os
+
+##################################################################
+
+#######################   FUNCTION   #############################
+
+from setPath import returnVBHCPath, setCriteriaPath, getDocType
 
 ##################################################################
 
@@ -24,49 +29,11 @@ from envLoader import openai_api_key, amqp_mongo_queue
 os.environ["OPENAI_API_KEY"] = openai_api_key
 
 
-def getDocType(title: str):
-    doc_types = [
-        "ban-ghi-nho",
-        "ban-thoa-thuan",
-        "bao-cao",
-        "bien-ban",
-        "chuong-trinh",
-        "cong-thu",
-        "cong-van",
-        "de-an",
-        "du-an",
-        "giay-gioi-thieu",
-        "giay-moi",
-        "giay-nghi-phep",
-        "giay-uy-quyen",
-        "hop-dong",
-        "huong-dan",
-        "ke-hoach",
-        "nghi-quyet",
-        "phieu-bao",
-        "phieu-chuyen",
-        "phieu-gui",
-        "phuong-an",
-        "quy-che",
-        "quy-dinh",
-        "quyet-dinh",
-        "thong-bao",
-        "thong-cao",
-        "to-trinh",
-    ]
-
-    normalized_title = unidecode(title).lower().replace(" ", "-")
-
-    for doc_type in doc_types:
-        if doc_type in normalized_title:
-            position_find = normalized_title.find(doc_type)
-            if position_find == 0 or position_find == 1:
-                return doc_type
-
-    return None
-
-
 def langchainProcessor(req):
+    # Create producer connection
+    producer_conn = pika.BlockingConnection(params)
+    producer_channel = producer_conn.channel()
+
     # Initialize the producer channel
     producer_channel.queue_declare(queue=amqp_mongo_queue, durable=True)
     producer_channel.basic_qos(prefetch_count=10)
@@ -78,12 +45,14 @@ def langchainProcessor(req):
 
     # Handle the type of document and load the corresponding criteria
     criteria_path = ""
+    type_path = ""
     if type == "admin-doc":
         doc_type = getDocType(title)
+        type_path = "VBHC/"
 
         # If the document type is not found, return "Khác"
         if doc_type == None:
-            json_data["data"]["criteria"] = "Khác"
+            json_data["data"]["criteria"] = "VBHC/Khác"
             data_string = json.dumps(json_data)
             producer_channel.basic_publish(
                 exchange="",
@@ -93,8 +62,10 @@ def langchainProcessor(req):
                     delivery_mode=pika.DeliveryMode.Persistent
                 ),
             )
+            producer_conn.close()
             return
 
+        type_path += returnVBHCPath(doc_type)
         criteria_path = "criteria/VBHC/" + doc_type + ".pdf"
         docs_prompt = """
             You are a administrative document classifier.
@@ -111,9 +82,10 @@ def langchainProcessor(req):
 
     if type == "book":
         criteria_path = "criteria/Book/book-type.pdf"
+        type_path = "Sách/"
         docs_prompt = """
             You are a book classifier.
-            You must choose at least 3 criteria from the list of criteria below.
+            You must choose at least 3 unique criteria from the list of criteria below.
             You are not allowed to modify the criteria content that you have chosen.
             Separate criteria using the '|'.
             Return the criteria you chosen with no further information.
@@ -143,9 +115,10 @@ def langchainProcessor(req):
 
     # Return the answer
     res = response["answer"].split("|")
-    json_data["data"]["criteria"] = res
+    criteria = setCriteriaPath(type, type_path, res)
+    json_data["data"]["criteria"] = criteria
     data_string = json.dumps(json_data)
-    print(data_string)
+
     # Send message to Mongo queue
     producer_channel.basic_publish(
         exchange="",
@@ -153,3 +126,4 @@ def langchainProcessor(req):
         body=data_string,
         properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),
     )
+    producer_conn.close()
