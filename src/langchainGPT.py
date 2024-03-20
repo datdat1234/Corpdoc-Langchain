@@ -44,9 +44,6 @@ def langchainProcessor(req):
     type = json_data["data"]["type"]
     title = json_data["data"]["title"]
 
-    # Log request
-    logRequest(json_data)
-
     # Handle the type of document and load the corresponding criteria
     criteria_path = ""
     type_path = ""
@@ -77,7 +74,8 @@ def langchainProcessor(req):
             You are not allowed to modify the criterion content that you have chosen.
             Return the criterion you chosen with no further information.
             If no criteria are satisfied, return 'Khác'.
-            For example: "Báo cáo tài chính"
+            For example, there are 3 criteria: "Báo cáo tài chính", "Báo cáo tiến độ dự án" and "Báo cáo thị trường". You need to choose one of them.
+            The title of the document is: "Báo cáo thị trường Việt Nam 2023". Thus, the output is "Báo cáo thị trường".
             <context>
                 {context}
             </context>
@@ -123,6 +121,9 @@ def langchainProcessor(req):
     json_data["data"]["criteria"] = criteria
     data_string = json.dumps(json_data)
 
+    # Log request
+    logRequest(json_data)
+
     # Send message to Mongo queue
     producer_channel.basic_publish(
         exchange="",
@@ -136,5 +137,5 @@ def langchainProcessor(req):
 def logRequest(json_data):
     current_time = datetime.now()
     current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
-    str_data = json.dumps(json_data)
-    print(current_time_str + " - " + str_data)
+    print(current_time_str)
+    print(json_data)
