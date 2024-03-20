@@ -74,8 +74,8 @@ def langchainProcessor(req):
             You are not allowed to modify the criterion content that you have chosen.
             Return the criterion you chosen with no further information.
             If no criteria are satisfied, return 'Khác'.
-            For example, there are 3 criteria: "Báo cáo tài chính", "Báo cáo tiến độ dự án" and "Báo cáo thị trường". You need to choose one of them.
-            The title of the document is: "Báo cáo thị trường Việt Nam 2023". Thus, the output is "Báo cáo thị trường".
+            For example: There are 3 criteria: "Báo cáo tài chính", "Báo cáo tiến độ dự án" and "Báo cáo thị trường". You need to choose one of them.
+            The title of the document is: "Báo cáo thị trường Việt Nam 2023". Thus, the output is "Báo cáo thị trường". As you see, the output is the same as the criterion.
             <context>
                 {context}
             </context>
