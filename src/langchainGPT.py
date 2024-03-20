@@ -1,6 +1,6 @@
 ########################## LIBRARY ###############################
 
-from rabbitMQ import params
+from src.rabbitMQ import params
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -16,13 +16,13 @@ import os
 
 #######################   FUNCTION   #############################
 
-from setPath import returnVBHCPath, setCriteriaPath, getDocType
+from src.setPath import returnVBHCPath, setCriteriaPath, getDocType
 
 ##################################################################
 
 ########################## VARIABLE ##############################
 
-from envLoader import openai_api_key, amqp_mongo_queue
+from src.envLoader import openai_api_key, amqp_mongo_queue
 
 ##################################################################
 
@@ -30,6 +30,7 @@ os.environ["OPENAI_API_KEY"] = openai_api_key
 
 
 def langchainProcessor(req):
+    print(req)
     # Create producer connection
     producer_conn = pika.BlockingConnection(params)
     producer_channel = producer_conn.channel()
@@ -118,7 +119,7 @@ def langchainProcessor(req):
     criteria = setCriteriaPath(type, type_path, res)
     json_data["data"]["criteria"] = criteria
     data_string = json.dumps(json_data)
-
+    
     # Send message to Mongo queue
     producer_channel.basic_publish(
         exchange="",
