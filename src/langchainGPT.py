@@ -1,6 +1,5 @@
 ########################## LIBRARY ###############################
 
-from src.rabbitMQ import params
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -8,6 +7,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
+from datetime import datetime
 import json
 import pika
 import os
@@ -22,6 +22,7 @@ from src.setPath import returnVBHCPath, setCriteriaPath, getDocType
 
 ########################## VARIABLE ##############################
 
+from src.rabbitMQ import params
 from src.envLoader import openai_api_key, amqp_mongo_queue
 
 ##################################################################
@@ -30,7 +31,6 @@ os.environ["OPENAI_API_KEY"] = openai_api_key
 
 
 def langchainProcessor(req):
-    print(req)
     # Create producer connection
     producer_conn = pika.BlockingConnection(params)
     producer_channel = producer_conn.channel()
@@ -43,6 +43,9 @@ def langchainProcessor(req):
     json_data = json.loads(req)
     type = json_data["data"]["type"]
     title = json_data["data"]["title"]
+
+    # Log request
+    logRequest(json_data)
 
     # Handle the type of document and load the corresponding criteria
     criteria_path = ""
@@ -119,7 +122,7 @@ def langchainProcessor(req):
     criteria = setCriteriaPath(type, type_path, res)
     json_data["data"]["criteria"] = criteria
     data_string = json.dumps(json_data)
-    
+
     # Send message to Mongo queue
     producer_channel.basic_publish(
         exchange="",
@@ -128,3 +131,10 @@ def langchainProcessor(req):
         properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),
     )
     producer_conn.close()
+
+
+def logRequest(json_data):
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    str_data = json.dumps(json_data)
+    print(current_time_str + " - " + str_data)
