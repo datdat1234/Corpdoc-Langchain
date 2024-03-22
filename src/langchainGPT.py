@@ -54,6 +54,10 @@ def langchainProcessor(req):
         # If the document type is not found, return "Khác"
         if doc_type == None:
             json_data["data"]["criteria"] = "VBHC/Khác"
+
+            # Log request
+            logRequest(json_data)
+
             data_string = json.dumps(json_data)
             producer_channel.basic_publish(
                 exchange="",
