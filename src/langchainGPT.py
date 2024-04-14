@@ -17,6 +17,7 @@ import os
 #######################   FUNCTION   #############################
 
 from src.setPath import returnVBHCPath, setCriteriaPath, getDocType
+from src.dataLoader import getCriteriaData
 
 ##################################################################
 
@@ -45,8 +46,10 @@ def langchainProcessor(req):
     title = json_data["data"]["title"]
 
     # Handle the type of document and load the corresponding criteria
-    criteria_path = ""
+    criteria_path = "file/" + json_data["data"]["fileId"] + ".pdf"
+    level1_type = ""
     type_path = ""
+
     if type == "admin-doc":
         doc_type = getDocType(title)
         type_path = "VBHC/"
@@ -70,8 +73,8 @@ def langchainProcessor(req):
             producer_conn.close()
             return
 
-        type_path += returnVBHCPath(doc_type)
-        criteria_path = "criteria/VBHC/" + doc_type + ".pdf"
+        level1_type = returnVBHCPath(doc_type)
+        type_path += level1_type
         docs_prompt = """
             You are a administrative document classifier.
             You can only choose one criterion from the list of criteria below.
@@ -87,7 +90,6 @@ def langchainProcessor(req):
         """
 
     if type == "book":
-        criteria_path = "criteria/Book/book-type.pdf"
         type_path = "Sách/"
         docs_prompt = """
             You are a book classifier.
@@ -103,11 +105,17 @@ def langchainProcessor(req):
             Book content: {input} 
         """
 
+    # Load criteria data from PG
+    getCriteriaData(criteria_path, type, level1_type)
+
     # Load Criteria
     loader = PyPDFLoader(criteria_path)
     docs = loader.load_and_split()
     embeddings = OpenAIEmbeddings()
     vector = FAISS.from_documents(docs, embeddings)
+
+    # Remove local file
+    os.remove(criteria_path)
 
     # Create LLM
     llm = ChatOpenAI()

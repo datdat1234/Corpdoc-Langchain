@@ -137,8 +137,8 @@ def returnVBHCPath(type):
         return "Quyết định"
     elif type == "thong-bao":
         return "Thông báo"
-    elif type == "thong-tu":
-        return "Thông tư"
+    elif type == "thong-cao":
+        return "Thông cáo"
     elif type == "to-trinh":
         return "Tờ trình"
     else:
