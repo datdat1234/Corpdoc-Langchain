@@ -73,6 +73,22 @@ def getDocType(title: str):
         "thong-bao",
         "thong-cao",
         "to-trinh",
+        "chi-thi",
+        "cong-dien",
+        "don",
+        "giay-de-nghi",
+        "cong-bo",
+        "dieu-le",
+        "thoa-uoc",
+        "giay-xac-nhan",
+        "giay-dang-ky",
+        "giay-chung-nhan",
+        "giay-bien-nhan",
+        "thu",
+        "noi-quy",
+        "phieu-lay-y-kien",
+        "giay-phep",
+        "chung-chi",
     ]
 
     normalized_title = unidecode(title).lower().replace(" ", "-")
@@ -141,9 +157,40 @@ def returnVBHCPath(type):
         return "Thông cáo"
     elif type == "to-trinh":
         return "Tờ trình"
+    elif type == "chi-thi":
+        return "Chỉ thị"
+    elif type == "cong-dien":
+        return "Công điện"
+    elif type == "don":
+        return "Đơn"
+    elif type == "giay-de-nghi":
+        return "Giấy đề nghị"
+    elif type == "cong-bo":
+        return "Công bố"
+    elif type == "dieu-le":
+        return "Điều lệ"
+    elif type == "thoa-uoc":
+        return "Thỏa ước"
+    elif type == "giay-xac-nhan":
+        return "Giấy xác nhận"
+    elif type == "giay-dang-ky":
+        return "Giấy đăng ký"
+    elif type == "giay-chung-nhan":
+        return "Giấy chứng nhận"
+    elif type == "giay-bien-nhan":
+        return "Giấy biên nhận"
+    elif type == "thu":
+        return "Thư"
+    elif type == "noi-quy":
+        return "Nội quy"
+    elif type == "phieu-lay-y-kien":
+        return "Phiếu lấy ý kiến"
+    elif type == "giay-phep":
+        return "Giấy phép"
+    elif type == "chung-chi":
+        return "Chứng chỉ"
     else:
         return "Khác"
-
 
 def setCriteriaPath(doc_type, type_path, criteria):
     if doc_type == "admin-doc":
