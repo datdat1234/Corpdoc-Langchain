@@ -81,6 +81,7 @@ def getDocType(title: str):
         "dieu-le",
         "thoa-uoc",
         "giay-xac-nhan",
+        "xac-nhan",
         "giay-dang-ky",
         "giay-chung-nhan",
         "giay-bien-nhan",
@@ -89,6 +90,7 @@ def getDocType(title: str):
         "phieu-lay-y-kien",
         "giay-phep",
         "chung-chi",
+        "to-khai",
     ]
 
     normalized_title = unidecode(title).lower().replace(" ", "-")
@@ -175,7 +177,7 @@ def returnVBHCPath(type):
         return "Điều lệ"
     elif type == "thoa-uoc":
         return "Thỏa ước"
-    elif type == "giay-xac-nhan":
+    elif type == "giay-xac-nhan" or type == "xac-nhan":
         return "Giấy xác nhận"
     elif type == "giay-dang-ky":
         return "Giấy đăng ký"
@@ -193,6 +195,8 @@ def returnVBHCPath(type):
         return "Giấy phép"
     elif type == "chung-chi":
         return "Chứng chỉ"
+    elif type == "to-khai":
+        return "Tờ khai"
     else:
         return "Khác"
 
