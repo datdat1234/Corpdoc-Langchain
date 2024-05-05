@@ -93,13 +93,17 @@ def getDocType(title: str):
 
     normalized_title = unidecode(title).lower().replace(" ", "-")
 
+    doc_type_tmp = None
+    doc_min_position = 1000000
+
     for doc_type in doc_types:
         if doc_type in normalized_title:
             position_find = normalized_title.find(doc_type)
-            if position_find == 0 or position_find == 1:
-                return doc_type
+            if position_find < doc_min_position:
+                doc_min_position = position_find
+                doc_type_tmp = doc_type
 
-    return None
+    return doc_type_tmp
 
 
 def returnVBHCPath(type):
@@ -191,6 +195,7 @@ def returnVBHCPath(type):
         return "Chứng chỉ"
     else:
         return "Khác"
+
 
 def setCriteriaPath(doc_type, type_path, criteria):
     if doc_type == "admin-doc":
