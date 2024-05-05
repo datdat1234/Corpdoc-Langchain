@@ -90,6 +90,8 @@ def langchainProcessor(req):
         """
 
     if type == "book":
+        if title == None or title == "":
+            title = json_data["data"]["ocr"]["body"]
         type_path = "Sách/"
         docs_prompt = """
             You are a book classifier.
