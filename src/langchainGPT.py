@@ -77,7 +77,7 @@ def langchainProcessor(req):
         type_path += level1_type
         docs_prompt = """
             You are a administrative document classifier.
-            You can only choose one criterion from the list of criteria below.
+            You can only choose one criterion from the list of criteria below base on the Document content.
             You are not allowed to modify the criterion content that you have chosen.
             Return the criterion you chosen with no further information.
             If no criteria are satisfied, return 'Khác'.
@@ -95,12 +95,12 @@ def langchainProcessor(req):
         type_path = "Sách/"
         docs_prompt = """
             You are a book classifier.
-            You must choose at least 3 unique criteria from the list of criteria below.
+            You must choose at least 3 unique criteria from the list of criteria below base on the Book content.
             You are not allowed to modify the criteria content that you have chosen.
             Separate criteria using the '|'.
             Return the criteria you chosen with no further information.
             If no criteria are satisfied, return 'Khác'.
-            For example: "Thần bí|Trinh thám|Kinh dị"
+            For example: "Thần bí và Trinh thám|Kinh dị|Hài"
             <context>
                 {context}
             </context>
