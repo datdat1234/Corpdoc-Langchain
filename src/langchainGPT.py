@@ -44,10 +44,11 @@ def langchainProcessor(req):
     json_data = json.loads(req)
     type = json_data["data"]["type"]
     title = json_data["data"]["title"]
+    content = json_data["data"]["ocr"]["body"]
 
     # Handle the type of document and load the corresponding criteria
     criteria_path = "file/" + json_data["data"]["fileId"] + ".pdf"
-    level1_type = ""
+    level2_type = ""
     type_path = ""
 
     if type == "admin-doc":
@@ -73,16 +74,14 @@ def langchainProcessor(req):
             producer_conn.close()
             return
 
-        level1_type = returnVBHCPath(doc_type)
-        type_path += level1_type
+        level2_type = returnVBHCPath(doc_type)
         docs_prompt = """
             You are a administrative document classifier.
-            You can only choose one criterion from the list of criteria below base on the Document content.
-            You are not allowed to modify the criterion content that you have chosen.
-            Return the criterion you chosen with no further information.
-            If no criteria are satisfied, return 'Khác'.
-            For example: There are 3 criteria: "Báo cáo tài chính", "Báo cáo tiến độ dự án" and "Báo cáo thị trường". You need to choose one of them.
-            The title of the document is: "Báo cáo thị trường Việt Nam 2023". Thus, the output is "Báo cáo thị trường". As you see, the output is the same as the criterion.
+            You must choose 3 criteria that you think are most suitable for the Document content.
+            The criteria returned are separated by vertical bars, for example: "Báo chí|Bưu chính|Viễn thông" (Do not add any space).
+            Only choose the criteria, do not return anymore information.
+            For example: The document content is: "Báo cáo thị trường Việt Nam 2023". Thus, the output is "Hành chính|Kinh tế|Tài chính".
+            The administrative document criteria are:
             <context>
                 {context}
             </context>
@@ -90,17 +89,14 @@ def langchainProcessor(req):
         """
 
     if type == "book":
-        if title == None or title == "":
-            title = json_data["data"]["ocr"]["body"]
         type_path = "Sách/"
         docs_prompt = """
             You are a book classifier.
-            You must choose at least 3 unique criteria from the list of criteria below base on the Book content.
-            You are not allowed to modify the criteria content that you have chosen.
-            Separate criteria using the '|'.
-            Return the criteria you chosen with no further information.
-            If no criteria are satisfied, return 'Khác'.
-            For example: "Thần bí và Trinh thám|Kinh dị|Hài"
+            You must choose 4 criteria that you think are most suitable for the book content.
+            The criteria returned are separated by vertical bars, for example: "Tâm linh|Kịch tính|Kinh điển" (Do not add any space).
+            Only choose the criteria, do not return anymore information.
+            For example: The book content is: "Nhà giả kim". Thus, the output is "Thần bí|Siêu nhiên|Huyền ảo|Kỳ ảo".
+            The book criteria are:
             <context>
                 {context}
             </context>
@@ -108,7 +104,7 @@ def langchainProcessor(req):
         """
 
     # Load criteria data from PG
-    getCriteriaData(criteria_path, type, level1_type)
+    getCriteriaData(criteria_path, type)
 
     # Load Criteria
     loader = PyPDFLoader(criteria_path)
@@ -127,11 +123,11 @@ def langchainProcessor(req):
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = vector.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
-    response = retrieval_chain.invoke({"input": title})
+    response = retrieval_chain.invoke({"input": content})
 
     # Return the answer
     res = response["answer"].split("|")
-    criteria = setCriteriaPath(type, type_path, res)
+    criteria = setCriteriaPath(type, type_path, res, level2_type)
     json_data["data"]["criteria"] = criteria
     data_string = json.dumps(json_data)
 

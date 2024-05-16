@@ -7,25 +7,34 @@ from src.createNewPDF import createLocalPDF
 ########################## VARIABLE ##############################
 
 from src.connPG import conn
-from src.envLoader import vbhc_query, book_query
+from src.envLoader import vbhc_query_level1, book_query_hc, book_query_phc
 
 ##################################################################
 
 
-def getCriteriaData(path, domain, type=""):
+def getCriteriaData(path, domain):
     data = ""
     cursor = conn.cursor()
 
     if domain == "admin-doc":
-        domain_col = "VBHC"
-        cursor.execute(vbhc_query, (domain_col, type))
+        cursor.execute(vbhc_query_level1)
         res = cursor.fetchone()
         data = res[0]
 
     if domain == "book":
-        domain_col = "Sách"
-        cursor.execute(book_query, (domain_col,))
+        cursor.execute(book_query_hc)
         res = cursor.fetchone()
-        data = res[0]
+        data = data + res[0]
+        
+        cursor.execute(book_query_phc)
+        res = cursor.fetchone()
+        data = data + res[0]
 
     createLocalPDF(data, path)
+    
+def queryData(query):
+    cursor = conn.cursor()
+    cursor.execute(query)
+    res = cursor.fetchone()
+    return res[0]
+    
