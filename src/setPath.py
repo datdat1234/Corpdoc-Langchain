@@ -51,7 +51,6 @@ vbhc_types = remove_first_character_and_trim(
 
 doc_types = create_key_value_pairs(vbhc_types)
 
-
 def getDocType(title: str):
     normalized_title = unidecode(title).lower().replace(" ", "-")
 
