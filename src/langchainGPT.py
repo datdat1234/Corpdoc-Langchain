@@ -45,7 +45,28 @@ def langchainProcessor(req):
     type = json_data["data"]["type"]
     title = json_data["data"]["title"]
     content = json_data["data"]["ocr"]["body"]
+    status = json_data["data"]["status"]
+    
+    # Check if the status is false
+    if status == False:
+        # Log false status request
+        print("Status is False: ", json_data["data"]["fileId"])
+        
+        # Log request
+        logRequest(json_data)
 
+        data_string = json.dumps(json_data)
+        producer_channel.basic_publish(
+            exchange="",
+            routing_key=amqp_mongo_queue,
+            body=data_string,
+            properties=pika.BasicProperties(
+                delivery_mode=pika.DeliveryMode.Persistent
+            ),
+        )
+        producer_conn.close()
+        return
+    
     # Handle the type of document and load the corresponding criteria
     criteria_path = "file/" + json_data["data"]["fileId"] + ".pdf"
     level2_type = ""
